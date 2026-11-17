@@ -30,7 +30,9 @@ const DIP = 0.0045; // buy when close is 0.45% under the 6h mean
 const GUARD_BAND = 0.015; // no buys 1.5% under the 12h mean
 const STOP = 0.01; // cut a position 1% under its fill price
 const SIZE_BPS = 9_000n; // spend 90% of equity per entry
-const COOLDOWN = 15; // bars to sit out after an exit
+const COOLDOWN = 15; // bars to sit out after a mean exit
+const STOP_COOLDOWN = 45; // bars to sit out after a stop exit: a dip that kept
+// falling is a tape that wants to fall further, so revenge entries wait longer
 const DD_STOP = 0.08; // flatten and halt on an 8% equity drawdown
 const MAX_SLIPPAGE_BPS = 300;
 
@@ -115,7 +117,7 @@ await runBars({
     const hitMean = close >= mean;
     const hitStop = entry !== null && close < entry * (1 - STOP);
     if (hitMean || hitStop) {
-      cooldownUntil = state.seq + COOLDOWN;
+      cooldownUntil = state.seq + (hitStop ? STOP_COOLDOWN : COOLDOWN);
       return [{ side: 'sell', symbol, qty, max_slippage_bps: MAX_SLIPPAGE_BPS }];
     }
     return [];
